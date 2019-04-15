@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <list>
+#include <unistd.h>
 #include <boost/thread.hpp>
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
@@ -16,31 +18,31 @@
 struct NameAndValue{
     std::string strName;
     std::string strValue;
-}
+};
 
 typedef websocketpp::server<websocketpp::config::asio> server;
 using websocketpp::lib::placeholders::_1;
-using websokcetpp::lib::placeholders::_2;
+using websocketpp::lib::placeholders::_2;
 
 typedef server::message_ptr message_ptr;
 
 class WebSocketServerOperate{
 public:
-    WebSocketServerOpreate();
-    ~WebSocketServerOpreate();
+    WebSocketServerOperate(void);
+    ~WebSocketServerOperate(void);
 
-    int Init(unsigned short usPort, char *pBaseUri="/ws");
-    int Uninit();
-    int StartWork();
-    int StopWord();
+    int Init(unsigned short usPort, const char *pBaseUri="/ws");
+    int Uninit(void);
+    int StartWork(void);
+    int StopWork(void);
 
 protected: 
-    int ThreadProcess();
+    int ThreadProcess(void);
     void InsertClientConnection(websocketpp::connection_hdl hdl);
     void DeleteClientConnection(websocketpp::connection_hdl hdl);
 
 public:
-    void validate(server *s, websocketpp::connection_hdl hdl);
+    bool validate(server *s, websocketpp::connection_hdl hdl);
     
     void on_http(server *s, websocketpp::connection_hdl hdl);
     void on_fail(server *s, websocketpp::connection_hdl hdl);
@@ -61,5 +63,5 @@ protected:
     boost::thread *m_threadMain;
     bool m_bThreadExit;
     std::list<websocketpp::connection_hdl> m_listClientConnection;
-}
+};
 #endif

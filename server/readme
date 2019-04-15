@@ -1,0 +1,2 @@
+g++ -c WebSocketServerOperate.cc  -I /home/litao/websocketpp  -lpthread -ljson  -std=c++11  -D_WEBSOCKETPP_CPP11_STL_ -DASIO_STANDALONE
+g++ -o server main.cc WebSocketServerOperate.o  -I /home/litao/websocketpp -lboost_thread -lpthread -ljson -std=c++11  -D_WEBSOCKETPP_CPP11_STL_ -DASIO_STANDALONE

@@ -1,5 +1,5 @@
 #include "WebSocketServerOperate.h"
-#include "jsoncpp/include/json/json.h"
+#include "json/json.h"
 
 #ifdef _DEBUG
 #pragma comment(lib, "jsoncpp/lib/debug/lib_json.lib");
@@ -7,7 +7,7 @@
 #pragma comment(lib, "jsoncpp/lib/release/lib_json.lib");
 #endif
 
-WebSocketServerOperate::WebSocketServerOpreate(){
+WebSocketServerOperate::WebSocketServerOperate(void){
     m_usPort = SERVER_PORT;
     memset(m_szBaseUri, 0, sizeof(m_szBaseUri));
     m_bThreadExit = true;
@@ -15,7 +15,7 @@ WebSocketServerOperate::WebSocketServerOpreate(){
     m_listClientConnection.clear();
 }
 
-WebSocketServerOperate::~WebSocketServerOpreate(){
+WebSocketServerOperate::~WebSocketServerOperate(void){
     if(m_threadMain != NULL){
         delete m_threadMain;
         m_threadMain = NULL;
@@ -29,7 +29,7 @@ bool WebSocketServerOperate::validate(server *s, websocketpp::connection_hdl hdl
 void WebSocketServerOperate::on_http(server *s, websocketpp::connection_hdl hdl){
     server::connection_ptr con = s->get_con_from_hdl(hdl);
 
-    std::string res = co->get_request_body();
+    std::string res = con->get_request_body();
     
     std::stringstream ss;
     ss << "got http request with" << res.size() << " byte of body data.";
@@ -39,22 +39,22 @@ void WebSocketServerOperate::on_http(server *s, websocketpp::connection_hdl hdl)
 }
 
 void WebSocketServerOperate::on_fail(server *s, websocketpp::connection_hdl hdl){
-    server::connection_ptr con = s->get_on_from_hdl(hdl);
+    server::connection_ptr con = s->get_con_from_hdl(hdl);
 
     std::cout << "Fail handler: " << con->get_ec() << " " << con->get_ec().message() << std::endl;
 }
 
 void WebSocketServerOperate::on_open(server *s, websocketpp::connection_hdl hdl){
-    std::out << "open handler" << std::endl;
+    std::cout << "open handler" << std::endl;
     InsertClientConnection(hdl);
-    server::connection_ptr con = s->get_on_from_hdl(hdl);
+    server::connection_ptr con = s->get_con_from_hdl(hdl);
     websocketpp::config::core::request_type requestClient = con->get_request();
     std::string strMethod = requestClient.get_method();
-    std::string strUri = requestClient.get_Uri();
+    std::string strUri = requestClient.get_uri();
     std::string strRequestOperateCommand = "";
     std::vector<NameAndValue> listRequestOperateParameter;
     GetRequestCommandAndParameter(strUri, strRequestOperateCommand, listRequestOperateParameter);
-    std::out << "command:" << strRequestOperateCommand << std::endl;
+    std::cout << "command:" << strRequestOperateCommand << std::endl;
 
     if(strcmp(listRequestOperateParameter[0].strValue.c_str(), "admin") == 0 &&
         strcmp(listRequestOperateParameter[1].strValue.c_str(), "admin") == 0){
@@ -82,28 +82,28 @@ void WebSocketServerOperate::on_open(server *s, websocketpp::connection_hdl hdl)
 }
 
 void WebSocketServerOperate::on_close(server *s, websocketpp::connection_hdl hdl){
-    std::out << "Close handler" << std::endl;
+    std::cout << "Close handler" << std::endl;
     DeleteClientConnection(hdl);
 }
 
-void WebSocketServerOperate::on_message(server *s, wensocketpp::connection_hdl hdl, message_ptr msg){
+void WebSocketServerOperate::on_message(server *s, websocketpp::connection_hdl hdl, message_ptr msg){
     std::cout << "on message: " << msg->get_payload() << std::endl;
 
     try{
-        s->send(hdl, msg->get_payload(), msg->get_opcode();
+        s->send(hdl, msg->get_payload(), msg->get_opcode());
     }
-    catch(websocket::exception const &e){
+    catch(websocketpp::exception const &e){
         std::cout << "Echo failed because: (" << e.what() << ")" << std::endl;
     }
 }
 
-int WebSocketServerOperate::Init(unsigned short usPort, char *pBaseUri){
+int WebSocketServerOperate::Init(unsigned short usPort, const char *pBaseUri){
     int nRet = 0;
     m_usPort = usPort;
-    strcpy_s(m_szBaseUri, pBaseUri);
+    strcpy(m_szBaseUri, pBaseUri);
     try{
-        m_server.set_access_channels(websocket::log::alevel::all);
-        m_server.set_error_channels(websocket::log::alevel::all);
+        m_server.set_access_channels(websocketpp::log::alevel::all);
+        m_server.set_error_channels(websocketpp::log::alevel::all);
         
         m_server.set_message_handler(bind(&WebSocketServerOperate::on_message, this, &m_server, ::_1, ::_2));
         m_server.set_http_handler(bind(&WebSocketServerOperate::on_http, this, &m_server, ::_1));
@@ -111,7 +111,7 @@ int WebSocketServerOperate::Init(unsigned short usPort, char *pBaseUri){
         m_server.set_open_handler(bind(&WebSocketServerOperate::on_open, this, &m_server, ::_1));
         m_server.set_close_handler(bind(&WebSocketServerOperate::on_close, this, &m_server, ::_1));
         m_server.set_validate_handler(bind(&WebSocketServerOperate::validate, this, &m_server, ::_1));
-        
+
         m_server.init_asio();
         m_server.set_reuse_addr(true);
 
@@ -134,13 +134,13 @@ int WebSocketServerOperate::Init(unsigned short usPort, char *pBaseUri){
     return nRet;
 }
 
-int WebSocketServerOperate::Uninit(){
+int WebSocketServerOperate::Uninit(void){
     return 0;
 }
 
-int WebSocketServerOperate::StartWork(){
+int WebSocketServerOperate::StartWork(void){
     m_bThreadExit = false;
-    m_bThreadMain = new boost::thread(boost::bind(&WebSocketServerOperate::ThreadProcess, this));
+    m_threadMain = new boost::thread(boost::bind(&WebSocketServerOperate::ThreadProcess, this));
     if(m_threadMain == NULL){
         m_bThreadExit = true;
         return -1;
@@ -150,22 +150,27 @@ int WebSocketServerOperate::StartWork(){
     }
 }
 
-int WebSocketServerOperate::StopWork(){
+int WebSocketServerOperate::StopWork(void){
     m_bThreadExit = true;
     m_server.stop();
     return 0;
 }
 
-int WebSocketServerOperate::ThreadProcess(){
+int WebSocketServerOperate::ThreadProcess(void){
     while(true){
         if(m_bThreadExit){
             break;
         }
 
         m_server.poll_one();
-        Sleep(100);
+        usleep(100000);    
     }
     return 0;
+}
+
+void WebSocketServerOperate::InsertClientConnection(websocketpp::connection_hdl hdl)
+{
+	m_listClientConnection.push_back(hdl);
 }
 
 void WebSocketServerOperate::DeleteClientConnection(websocketpp::connection_hdl hdl){
@@ -182,7 +187,7 @@ void WebSocketServerOperate::DeleteClientConnection(websocketpp::connection_hdl 
     }
 }
 
-int WebSocketServerOpreate::StringSplit(std::vector<std::string>& dst, const std::string& src, const std::string& separator)
+int WebSocketServerOperate::StringSplit(std::vector<std::string>& dst, const std::string& src, const std::string& separator)
 {
 	if (src.empty() || separator.empty())
 		return 0;
@@ -213,7 +218,7 @@ int WebSocketServerOpreate::StringSplit(std::vector<std::string>& dst, const std
 }
 
 //去前后空格
- std::string& WebSocketServerOpreate::StringTrim(std::string &str)
+std::string& WebSocketServerOperate::StringTrim(std::string &str)
 {
 	 if (str.empty()) {
 		 return str;
@@ -223,7 +228,7 @@ int WebSocketServerOpreate::StringSplit(std::vector<std::string>& dst, const std
 	 return str;
 }
 
-bool WebSocketServerOpreate::GetReqeustCommandAndParmeter(std::string strUri, std::string &strRequestOperateCommand, std::vector<NameAndValue> &listRequestOperateParameter){
+bool WebSocketServerOperate::GetRequestCommandAndParameter(std::string strUri, std::string &strRequestOperateCommand, std::vector<NameAndValue> &listRequestOperateParameter){
     bool bRet = false;
     std::vector<std::string> vecRequest;
     int nRetSplit = StringSplit(vecRequest, strUri, "?");
