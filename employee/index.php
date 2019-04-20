@@ -16,7 +16,8 @@
         echo "</script>";
         //header("Location: " . $loginUrl);
     }
-    
+    session_start();
+    var_dump($_SESSION);
     $localHost = $_SERVER['HTTP_HOST'];
     $loginUrl = "https://www.login.com/login.php";
     $logoutUrl = "https://www.login.com/logout.php";
@@ -26,10 +27,8 @@
     $ticket = $params["ticket"];
     $perm = '';
     $session_status = session_status();
-    echo "$session_status";
-    if(session_status() == PHP_SESSION_ACTIVE){
+    if($_SESSION['validate'] == true){
         //TODO add session message into page;
-        echo "session active";
         $perm = $_SESSION['perm'];
     }
     else{
@@ -125,7 +124,7 @@
                         <i class="fa fa-wrench"></i> Settings
                     </a>
 
-                    <a href="#" class="dropdown-item">
+                    <a href="logout.php?page=<?php echo 'http://'.$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF'].'?'.$_SERVER['QUERY_STRING'];?>" class="dropdown-item">
                         <i class="fa fa-lock"></i> Logout
                     </a>
                 </div>

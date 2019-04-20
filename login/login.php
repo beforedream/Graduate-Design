@@ -1,4 +1,6 @@
 <?php
+    session_start();
+    var_dump($_SESSION);
     $param = $_SERVER['QUERY_STRING'];
     function convertUrlQuery($query){
         $queryParts = explode('&', $query);
@@ -20,12 +22,32 @@
         return $data;
     }
 
-    function createTicket($conn, $page){
-        $_SESSION["ticket"][$page] = mt_rand(0, mt_getrandmax());
-        $ticket = $_SESSION["ticket"][$page];
-        return $ticket;
+    function createTicket(){
+        return mt_rand(0, mt_getrandmax());
     }
-
+    $count = count($_SESSION['ticket']);
+    echo "<br>";
+    echo "count: $count";
+    echo "<br>";
+    if(count($_SESSION['ticket']) > 0){
+        if(isset($_SESSION['ticket'][$page])){
+            $ticket = $_SESSION['ticket'][$page];
+            echo "<script>";
+            echo "alert(\"redirect to $page\");";
+            echo "window.location.href = \"https://$page?ticket=$ticket\";";
+            echo "</script>";
+            exit;
+        }
+        else{
+            $ticket = createTicket();
+            $_SESSION['ticket'][$page] = $ticket;
+            echo "<script>";
+            echo "alert(\"redirect to $page\");";
+            echo "window.location.href = \"https://$page?ticket=$ticket\";";
+            echo "</script>";
+            exit;
+        }
+    }
     $accountErr = $passwordErr = "";
     if($_SERVER["REQUEST_METHOD"] == "POST"){
         if(empty($_POST["account"])){
@@ -72,8 +94,7 @@
                 //密码输入部分可以加入次数保护。待选。
                 if(!strcmp($row["passwd"], $password)){
                     echo "$password" . "</br>";
-                    session_start();
-                    $ticket = createTicket($conn, $page);
+                    $ticket = createTicket();
                     echo "ticket = $ticket</br>";
                     $_SESSION['ticket'][$page] = $ticket;
                     $_SESSION['EID'] = $account;
@@ -100,35 +121,50 @@
                                     and belong.EID = employee1.EID 
                                     and belong.MEID = employee2.EID
                                     and belong.DID = pageperm.DID;";
+                        $result = $conn->query($sql);
+                        if($result->num_rows > 0){
+                            $row = $result->fetch_assoc();
+                            $_SESSION['EID'] = $row['EID'];
+                            $_SESSION['Ename'] = $row['Ename'];
+                            $_SESSION['MEID'] = $row['MEID'];
+                            $_SESSION['perm'] = $row['perm'];
+                        }
+                        else{
+                            echo "some error happend";
+                        }
                     }
                     else{
                         $sql = "select belong.EID as EID,
-                                    belong.DID as DID, 
-                                    employee1.Ename as Ename,
-                                    belong.MEID as MEID, 
-                                    employee2.Ename as MEname, 
-                                    employee1.Eage as Eage,
-                                    employee1.Eyear as Eyear, 
-                                    employee1.Esex as Esex, 
-                                    employee1.Eemail as Eemail,
-                                    employee1.Ephone as Ephone,$Dname
-                                    department.Dname as Dname,
-                                    department.Description as Description
-                                from belong, employee employee1, employee employee2, 
-                                    department
-                                where belong.EID = $account
-                                    and belong.DID = department.DID 
-                                    and belong.EID = employee1.EID 
-                                    and belong.MEID = employee2.EID;";
+                            belong.DID as DID, 
+                            employee1.Ename as Ename,
+                            belong.MEID as MEID, 
+                            employee2.Ename as MEname, 
+                            employee1.Eage as Eage,
+                            employee1.Eyear as Eyear, 
+                            employee1.Esex as Esex, 
+                            employee1.Eemail as Eemail,
+                            employee1.Ephone as Ephone,
+                            department.Dname as Dname,
+                            department.Description as Description
+                        from belong, employee employee1, employee employee2, 
+                            department
+                        where belong.EID = $account
+                            and belong.DID = department.DID 
+                            and belong.EID = employee1.EID 
+                            and belong.MEID = employee2.EID;";
+                        $result = $conn->query($sql);
+                        if($result->num_rows > 0){
+                            echo "sql: $sql</br>";
+                            $row = $result->fetch_assoc();
+                            $_SESSION['EID'] = $row['EID'];
+                            $_SESSION['Ename'] = $row['Ename'];
+                            $_SESSION['MEID'] = $row['MEID'];
+                            $_SESSION['perm'] = 1;
+                        }
+                        else{
+                            echo "some error happend";
+                        }
                     }
-                    $result = $conn->query($sql);
-                    if($result->num_rows() > 0){
-                        $row = $result->fetch_assoc();
-                        //TODO
-                    }
-                    $row = $result->fetch_assoc();
-                    $_SESSION['Dname'] = $row['Dname'];
-                    $_SESSION['EID'] = $row['EID'];
                     echo "<script>";
                     echo "alert(\"redirect to $page\");";
                     echo "window.location.href = \"https://$page?ticket=$ticket\";";
