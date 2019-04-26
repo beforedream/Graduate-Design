@@ -16,8 +16,18 @@
         echo "</script>";
         //header("Location: " . $loginUrl);
     }
+    
+    $userID = 100;
     session_start();
     var_dump($_SESSION);
+    $servername = "localhost";
+    $username = "root";
+    $passwd = "root";
+    $dbname = "EMS";
+    $conn = new mysqli($servername, $username, $passwd, $dbname);
+    if ($conn->connect_error) {
+        echo "连接失败: " . $conn->connect_error;
+    }
     $localHost = $_SERVER['HTTP_HOST'];
     $loginUrl = "https://www.login.com/login.php";
     $logoutUrl = "https://www.login.com/logout.php";
@@ -29,7 +39,10 @@
     $session_status = session_status();
     if($_SESSION['validate'] == true){
         //TODO add session message into page;
-        $perm = $_SESSION['perm'];
+        $info = $_SESSION['info'];
+        // $perm = $_SESSION['perm'];
+        // $EID = $_SESSION['EID'];
+        // $Ename = $_SESSION['Ename'];
     }
     else{
         if($ticket == null){  ///< ticket not exit;
@@ -99,8 +112,8 @@
 
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <img src="./imgs/avatar-1.png" class="avatar avatar-sm" alt="logo">
-                    <span class="small ml-1 d-md-down-none">John Smith</span>
+                    <img src="./com/imgs/avatar-1.png" class="avatar avatar-sm" alt="logo">
+                    <span class="small ml-1 d-md-down-none"><?php echo ''.$_SESSION['EID'].'@'.$_SESSION['Ename']?></span>
                 </a>
 
                 <div class="dropdown-menu dropdown-menu-right">
@@ -110,9 +123,9 @@
                         <i class="fa fa-user"></i> Profile
                     </a>
 
-                    <a href="#" class="dropdown-item">
+                    <div class="dropdown-item" id='Messages' onclick="alert('hi')" >
                         <i class="fa fa-envelope"></i> Messages
-                    </a>
+                    </div>
 
                     <div class="dropdown-header">Settings</div>
 
@@ -247,7 +260,7 @@
                     </li>
 
                     <li class="nav-item">
-                        <a href="tables.html" class="nav-link">
+                        <a href="./com/tables.html" class="nav-link">
                             <i class="icon icon-grid"></i> Tables
                         </a>
                     </li>
@@ -314,8 +327,22 @@
                         <div class="card p-4">
                             <div class="card-body d-flex justify-content-between align-items-center">
                                 <div>
-                                    <span class="h4 d-block font-weight-normal mb-2">54</span>
-                                    <span class="font-weight-light">Total Users</span>
+                                    <span class="h4 d-block font-weight-normal mb-2">
+                                        <?php
+                                            $sql = "select count(EID) as Colleagues from belong group by DID having DID = ".$_SESSION['DID'].";";
+                                            $result = $conn->query($sql);
+                                            $Colleagues = '';
+                                            if($result->num_rows > 0){
+                                                $row = $result->fetch_assoc();
+                                                $Colleagues = $row['Colleagues'];
+                                            }
+                                            else{
+                                                $Colleagues = '0';
+                                            }
+                                            echo  $Colleagues;
+                                        ?>
+                                    </span>
+                                    <span class="font-weight-light">Colleagues</span>
                                 </div>
 
                                 <div class="h2 text-muted">
@@ -329,7 +356,21 @@
                         <div class="card p-4">
                             <div class="card-body d-flex justify-content-between align-items-center">
                                 <div>
-                                    <span class="h4 d-block font-weight-normal mb-2">$32,400</span>
+                                    <span class="h4 d-block font-weight-normal mb-2">
+                                        <?php
+                                            $sql = "select sum(Amount) as income from salary group by EID having EID = ".$_SESSION['EID'].";";
+                                            $result = $conn->query($sql);
+                                            $income = '';
+                                            if($result->num_rows > 0){
+                                                $row = $result->fetch_assoc();
+                                                $income = $row['income'];
+                                            }
+                                            else{
+                                                $income = '0';
+                                            }
+                                            echo '￥'. $income;
+                                        ?>
+                                    </span>
                                     <span class="font-weight-light">Income</span>
                                 </div>
 
@@ -344,12 +385,17 @@
                         <div class="card p-4">
                             <div class="card-body d-flex justify-content-between align-items-center">
                                 <div>
-                                    <span class="h4 d-block font-weight-normal mb-2">900</span>
-                                    <span class="font-weight-light">Downloads</span>
+                                    <span class="h4 d-block font-weight-normal mb-2">
+                                        <?php
+                                            echo ucfirst($_SESSION['Dname']);
+                                        ?>
+                                    </span>
+                                    <span class="font-weight-light">Department</span>
                                 </div>
 
                                 <div class="h2 text-muted">
-                                    <i class="icon icon-cloud-download"></i>
+                                    <!-- <i class="icon icon-cloud-download"></i> -->
+                                    <i class="icon icon-home"></i>
                                 </div>
                             </div>
                         </div>
@@ -359,8 +405,8 @@
                         <div class="card p-4">
                             <div class="card-body d-flex justify-content-between align-items-center">
                                 <div>
-                                    <span class="h4 d-block font-weight-normal mb-2">32s</span>
-                                    <span class="font-weight-light">Time</span>
+                                    <span class="h4 d-block font-weight-normal mb-2"><?php echo $_SESSION['Eyear'].' years';?></span>
+                                    <span class="font-weight-light">Working Age</span>
                                 </div>
 
                                 <div class="h2 text-muted">
@@ -375,39 +421,61 @@
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-header">
-                                Total Users
-                            </div>
+                                工资走势图
+                            </div>  
 
                             <div class="card-body p-0">
                                 <div class="p-4">
+                                    <?php
+                                        $sql = "select Amount, PayTime from salary where EID = ".$_SESSION['EID']." order by PayTime asc;";
+                                        $result = $conn->query($sql);
+                                        $income = '';
+                                        $time = array();
+                                        $amount = array();
+                                        if($result->num_rows > 0){
+                                            while($row = $result->fetch_assoc()){
+                                                array_push($time, $row['PayTime']);
+                                                array_push($amount, $row['Amount']);
+                                            }
+                                        }
+                                    ?> 
+                                    <input id = amount style='display:none' value=<?php echo json_encode($amount)?>>
+                                    <input id = time style='display:none' value=<?php echo json_encode($time)?>>
+                                    <input style="display:none" type="text" id="ticket" value="<?php echo $_SESSION['ticket']?>">
                                     <canvas id="line-chart" width="100%" height="20"></canvas>
                                 </div>
 
                                 <div class="justify-content-around mt-4 p-4 bg-light d-flex border-top d-md-down-none">
                                     <div class="text-center">
-                                        <div class="text-muted small">Total Traffic</div>
-                                        <div>12,457 Users (40%)</div>
+                                        <div class="text-muted small">Average Amount</div>
+                                        <div>
+                                            <?php
+                                                $time12 = array_slice($time, -12);
+                                                $amount12 = array_slice($amount, -12); 
+                                                $amountAvg = array_sum($amount12) / count($amount12);
+                                                echo $amountAvg;
+                                            ?>
+                                        </div>
                                     </div>
 
                                     <div class="text-center">
-                                        <div class="text-muted small">Banned Users</div>
-                                        <div>95,333 Users (5%)</div>
+                                        <div class="text-muted small">Max Amount</div>
+                                        <div><?php echo max($time12) . ": " . max($amount12);?></div>   
                                     </div>
 
                                     <div class="text-center">
-                                        <div class="text-muted small">Page Views</div>
-                                        <div>957,565 Pages (50%)</div>
+                                        <div class="text-muted small">Min Amount</div>
+                                        <div><?php echo min($time12) . ": " . min($amount12);?></div>
                                     </div>
 
-                                    <div class="text-center">
+                                    <!-- <div class="text-center">
                                         <div class="text-muted small">Total Downloads</div>
                                         <div>957,565 Files (100 TB)</div>
-                                    </div>
+                                    </div> -->
                                 </div>
                             </div>
                         </div>
                     </div>
-                    More Templates <a href="http://www.cssmoban.com/" target="_blank" title="模板之家">模板之家</a> - Collect from <a href="http://www.cssmoban.com/" title="网页模板" target="_blank">网页模板</a>
                 </div>
             </div>
         </div>
@@ -418,6 +486,6 @@
 <script src="./com/vendor/bootstrap/js/bootstrap.min.js"></script>
 <script src="./com/vendor/chart.js/chart.min.js"></script>
 <script src="./com/js/carbon.js"></script>
-<script src="./com/js/demo.js"></script>
+<script src="./com/js/employee.js"></script>
 </body>
 </html>

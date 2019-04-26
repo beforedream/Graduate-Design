@@ -98,7 +98,7 @@
                     echo "ticket = $ticket</br>";
                     $_SESSION['ticket'][$page] = $ticket;
                     $_SESSION['EID'] = $account;
-                    $_SESSION['passwd'] = $password;
+                    $_SESSION['passwd'] = trim($password);
                     if(!strcmp($page, 'www.personnel.com') || !strcmp($page, 'www.salary.com')){
                         $sql = "select belong.EID as EID,
                                     belong.DID as DID, 
@@ -124,10 +124,19 @@
                         $result = $conn->query($sql);
                         if($result->num_rows > 0){
                             $row = $result->fetch_assoc();
-                            $_SESSION['EID'] = $row['EID'];
-                            $_SESSION['Ename'] = $row['Ename'];
-                            $_SESSION['MEID'] = $row['MEID'];
-                            $_SESSION['perm'] = $row['perm'];
+                            $_SESSION['EID'] = trim($row['EID']);
+                            $_SESSION['DID'] = trim($row['DID']);
+                            $_SESSION['Ename'] = trim($row['Ename']);
+                            $_SESSION['MEID'] = trim($row['MEID']);
+                            $_SESSION['MEname'] = trim($row['MEname']);
+                            $_SESSION['Eage'] = trim($row['Eage']);
+                            $_SESSION['Eyear'] = trim($row['Eyear']);
+                            $_SESSION['Esex'] = trim($row['Esex']);
+                            $_SESSION['Eemail'] = trim($row['Eemail']);
+                            $_SESSION['Ephone'] = trim($row['Ephone']);
+                            $_SESSION['Dname'] = trim($row['Dname']);
+                            $_SESSION['Description'] = trim($row['Description']);
+                            $_SESSION['perm'] = trim($row['perm']);
                         }
                         else{
                             echo "some error happend";
@@ -156,15 +165,25 @@
                         if($result->num_rows > 0){
                             echo "sql: $sql</br>";
                             $row = $result->fetch_assoc();
-                            $_SESSION['EID'] = $row['EID'];
-                            $_SESSION['Ename'] = $row['Ename'];
-                            $_SESSION['MEID'] = $row['MEID'];
-                            $_SESSION['perm'] = 1;
+                            $_SESSION['EID'] = trim($row['EID']);
+                            $_SESSION['DID'] = trim($row['DID']);
+                            $_SESSION['Ename'] = trim($row['Ename']);
+                            $_SESSION['MEID'] = trim($row['MEID']);
+                            $_SESSION['MEname'] = trim($row['MEname']);
+                            $_SESSION['Eage'] = trim($row['Eage']);
+                            $_SESSION['Eyear'] = trim($row['Eyear']);
+                            $_SESSION['Esex'] = trim($row['Esex']);
+                            $_SESSION['Eemail'] = trim($row['Eemail']);
+                            $_SESSION['Ephone'] = trim($row['Ephone']);
+                            $_SESSION['Dname'] = trim($row['Dname']);
+                            $_SESSION['Description'] = trim($row['Description']);
+                            $_SESSION['perm'] = '1';
                         }
                         else{
                             echo "some error happend";
                         }
                     }
+                    //$info = $_SESSION['info'];
                     echo "<script>";
                     echo "alert(\"redirect to $page\");";
                     echo "window.location.href = \"https://$page?ticket=$ticket\";";
