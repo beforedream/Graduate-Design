@@ -31,7 +31,7 @@
     $localHost = $_SERVER['HTTP_HOST'];
     $loginUrl = "https://www.login.com/login.php";
     $logoutUrl = "https://www.login.com/logout.php";
-    $validateUrl = "https://www.login.com/validate.php";
+    $dispatchUrl = "https://www.login.com/dispatch.php";
     $param = $_SERVER['QUERY_STRING'];
     $params = convertUrlQuery($param);
     $ticket = $params["ticket"];
@@ -51,7 +51,6 @@
             echo "alert(\"redirect to $loginUrl\");
                     window.location.href=\"$loginUrl?page=$localHost\";";
             echo "</script>";
-            //header("Location: " . $loginUrl);
             exit;
         }
         else{
@@ -60,8 +59,8 @@
             echo "</br>";
             //echo $params['ticket'];
             echo "<script language=\"javascript\">";
-            echo "alert(\"redirect to $validateUrl\");
-                    window.location.href=\"$validateUrl?page=$localHost&ticket=$ticket\";";
+            echo "alert(\"redirect to $dispatchUrl\");
+                    window.location.href=\"$dispatchUrl?page=$localHost&command=validate&ticket=$ticket\";";
             echo "</script>";
             //header("Location: " . $loginUrl);
             exit;
@@ -79,9 +78,174 @@
     <link rel="stylesheet" href="./com/vendor/simple-line-icons/css/simple-line-icons.css">
     <link rel="stylesheet" href="./com/vendor/font-awesome/css/fontawesome-all.min.css">
     <link rel="stylesheet" href="./com/css/styles.css">
+    <script src="./com/vendor/vue/vue.min.js"></script>
+    <style> 
+        .class_1{ 
+            display: none; 
+            position: absolute; 
+            top: 0%; 
+            left: 0%; 
+            width: 100%; 
+            height: 100%; 
+            background-color: black; 
+            z-index:1001; 
+            -moz-opacity: 0.8; 
+            opacity:.80; 
+            filter: alpha(opacity=88); 
+        } 
+        .class_2 { 
+            display: none; 
+            position: absolute; 
+            top: 25%; 
+            left: 25%; 
+            width: 55%; 
+            height: 55%; 
+            padding: 20px; 
+            border: 2px solid orange; 
+            background-color: white; 
+            z-index:1002; 
+            overflow: auto; 
+        } 
+
+        .title_box{
+            width:100%;
+            overflow:hidden;
+            display=flex;
+        }
+        .title_box input{
+            width:100%;
+            border:none;
+        }
+        .title_box select{
+            border:none;
+        }
+        .title_box option{
+            border:none;
+        }
+    </style> 
 </head>
 <body class="sidebar-fixed header-fixed">
 <div class="page-wrapper">
+
+    <div id = 'message' class = 'class_2'>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card p-4">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div class="title_box">
+                            <span class="h4 d-block font-weight-normal mb-2">姓名</span>
+                            <input class="font-weight-light" id='Ename' type='text' value="<?php echo $_SESSION['Ename']?>" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-4">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div class='title_box'>
+                            <span class="h4 d-block font-weight-normal mb-2">性别</span>
+                            <select class="font-weight-light" id='Esex' disabled required>
+                            <option value=1 <?php if($_SESSION['Esex']) echo 'selected'?>>男</option>
+                            <option value=0 <?php if(!$_SESSION['Esex']) echo 'selected'?>>女</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-4">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div class='title_box'>
+                            <span class="h4 d-block font-weight-normal mb-2">年龄</span>
+                            <input class="font-weight-light" id='Eage' type='text' value="<?php echo $_SESSION['Eage']?>" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-4">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div class='title_box'>
+                            <span class="h4 d-block font-weight-normal mb-2">主管</span>
+                            <input class="font-weight-light" id='MEname' type='text' value="<?php echo $_SESSION['MEname']?>" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card p-4">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div class='title_box'>
+                            <span class="h4 d-block font-weight-normal mb-2">部门</span>
+                            <input class="font-weight-light" id='Dname' type='text' value="<?php echo $_SESSION['Dname']?>" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-4">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div class='title_box'>
+                            <span class="h4 d-block font-weight-normal mb-2">邮件</span>
+                            <input class="font-weight-light" id='Eemail' type='text' value="<?php echo $_SESSION['Eemail']?>" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-4">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div class='title_box'>
+                            <span class="h4 d-block font-weight-normal mb-2">手机</span>
+                            <input class="font-weight-light" id='Ephone' type='text' value="<?php echo $_SESSION['Ephone']?>" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="postion:fixed; bottom:5px; float:right;">
+            <button type='button' style="width:50px" onclick="
+                document.getElementById('Ename').readOnly=false;
+                document.getElementById('Esex').disabled=false;
+                document.getElementById('Eage').readOnly=false;
+                document.getElementById('Eemail').readOnly=false;
+                document.getElementById('Ephone').readOnly=false;
+            ">修改</button>
+            <button type='button' style="width:50px" onclick="
+                if(confirm('确认修改么？')){
+                    var Ename = document.getElementById('Ename').value;
+                    var Esex = document.getElementById('Esex').value;
+                    var Eage = document.getElementById('Eage').value;
+                    var Eemail = document.getElementById('Eemail').value;
+                    var Ephone = document.getElementById('Ephone').value;
+                    sql = 'update employee set Ename = \'' + Ename + 
+                    '\', Esex = ' + Esex + ', Eage = ' + Eage + 
+                    ', Eemail = \'' + Eemail + '\', Ephone = \'' + 
+                    Ephone + '\' where EID = \'<?php echo $_SESSION['EID']?>\'';
+                    window.location.href = 'https:\\\\' + window.location.host + '\\dispatch.php?command=update&sql=' + sql;
+                    document.getElementById('Ename').readOnly=true;
+                    document.getElementById('Esex').disabled=true;
+                    document.getElementById('Eage').readOnly=true;
+                    document.getElementById('Eemail').readOnly=true;
+                    document.getElementById('Ephone').readOnly=true;
+                }
+                else{
+
+                }
+            ">确认</button>
+            <button type='button' style="width:50px" onclick="
+                document.getElementById('Ename').value = '<?php echo $_SESSION['Ename']?>';
+                document.getElementById('Esex').value = '<?php echo $_SESSION['Esex']?>';
+                document.getElementById('Eage').value = '<?php echo $_SESSION['Eage']?>';
+                document.getElementById('Eemail').value = '<?php echo $_SESSION['Eemail']?>';
+                document.getElementById('Ephone').value = '<?php echo $_SESSION['Ephpne']?>';
+            ">取消</button>
+            <button type='button' style="width:50px" onclick="document.getElementById('message').style.display='none'">退出</button>
+        </div>
+    </div>
+    
     <nav class="navbar page-header">
         <a href="#" class="btn btn-link sidebar-mobile-toggle d-md-none mr-auto">
             <i class="fa fa-bars"></i>
@@ -122,8 +286,7 @@
                     <a href="#" class="dropdown-item">
                         <i class="fa fa-user"></i> Profile
                     </a>
-
-                    <div class="dropdown-item" id='Messages' onclick="alert('hi')" >
+                    <div class="dropdown-item" id='Messages' onclick="document.getElementById('message').style.display='block'" >
                         <i class="fa fa-envelope"></i> Messages
                     </div>
 
@@ -137,14 +300,13 @@
                         <i class="fa fa-wrench"></i> Settings
                     </a>
 
-                    <a href="logout.php?page=<?php echo 'http://'.$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF'].'?'.$_SERVER['QUERY_STRING'];?>" class="dropdown-item">
+                    <a href="dispatch.php?page=<?php echo 'http://'.$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF'].'&'.'command=logout';?>" class="dropdown-item">
                         <i class="fa fa-lock"></i> Logout
                     </a>
                 </div>
             </li>
         </ul>
     </nav>
-
     <div class="main-container">
         <div class="sidebar">
             <nav class="sidebar-nav">
@@ -152,7 +314,7 @@
                     <li class="nav-title">Navigation</li>
 
                     <li class="nav-item">
-                        <a href="index.html" class="nav-link active">
+                        <a href="index.php" class="nav-link active">
                             <i class="icon icon-speedometer"></i> Dashboard
                         </a>
                     </li>
@@ -345,6 +507,7 @@
                                     <span class="font-weight-light">Colleagues</span>
                                 </div>
 
+                                
                                 <div class="h2 text-muted">
                                     <i class="icon icon-people"></i>
                                 </div>
@@ -394,7 +557,6 @@
                                 </div>
 
                                 <div class="h2 text-muted">
-                                    <!-- <i class="icon icon-cloud-download"></i> -->
                                     <i class="icon icon-home"></i>
                                 </div>
                             </div>
@@ -447,7 +609,7 @@
 
                                 <div class="justify-content-around mt-4 p-4 bg-light d-flex border-top d-md-down-none">
                                     <div class="text-center">
-                                        <div class="text-muted small">Average Amount</div>
+                                        <div class="text-muted small">Average Amount(during passed 12 months)</div>
                                         <div>
                                             <?php
                                                 $time12 = array_slice($time, -12);
@@ -459,12 +621,12 @@
                                     </div>
 
                                     <div class="text-center">
-                                        <div class="text-muted small">Max Amount</div>
+                                        <div class="text-muted small">Max Amount(during passed 12 months)</div>
                                         <div><?php echo max($time12) . ": " . max($amount12);?></div>   
                                     </div>
 
                                     <div class="text-center">
-                                        <div class="text-muted small">Min Amount</div>
+                                        <div class="text-muted small">Min Amount(during passed 12 months)</div>
                                         <div><?php echo min($time12) . ": " . min($amount12);?></div>
                                     </div>
 

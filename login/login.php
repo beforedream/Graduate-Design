@@ -231,7 +231,7 @@
                         <div class="card-body py-5">
                             <div class="form-group">
                                 <label class="form-control-label">Account</label>
-                                <input type="number" class="form-control" name="account">
+                                <input type="number" class="form-control" name="account" autofocus>
                             </div>
 
                             <div class="form-group">
