@@ -1,6 +1,9 @@
 <?php
+    header('Access-Control-Allow-Origin:https://www.employee.com, https://www.personnel.com. https://www.salary.com');
+    //跨域且使用session时不能使用 *
+    header("Access-Control-Allow-Credentials: true" );
     session_start();
-    var_dump($_SESSION);
+    var_dump($_SESSION); 
     $param = $_SERVER['QUERY_STRING'];
     function convertUrlQuery($query){
         $queryParts = explode('&', $query);
@@ -11,8 +14,35 @@
         }
         return $params;
     }
+    $servername = "localhost";
+    $username = "root";
+    $passwd = "root";
+    $dbname = "EMS";
+    $conn = new mysqli($servername, $username, $passwd, $dbname);
+    // 检测连接
+    if ($conn->connect_error) {
+        die("连接失败: " . $conn->connect_error);
+        //exit;
+    }
     $params = convertUrlQuery($param);
     $page = $params["page"];
+
+    function Http_request($url, $data = null)
+    {
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);
+        if (!empty($data)){
+            // curl_setopt($curl, CURLOPT_POST, 1);
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+        }
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
+        $output = curl_exec($curl);
+        // echo "<br> errorno:".curl_errno($curl);
+        curl_close($curl);
+        return $output;
+    }
 
     function test_input($data)
     {
@@ -20,6 +50,122 @@
         $data = stripslashes($data);
         $data = htmlspecialchars($data);
         return $data;
+    }
+
+    function getData($page, $account, $password, $conn){
+        $sql = "select * from usertable where EID = $account;";
+        echo "sql: $sql"."</br>";
+        $result = $conn->query($sql);
+        if($result->num_rows > 0){
+            $row = $result->fetch_assoc();
+            //TODO
+            //密码输入部分可以加入次数保护。待选。
+            if(!strcmp($row["passwd"], $password)){
+                if(!isset($_SESSION['ticket'][$page])){
+                    $ticket = createTicket();
+                    $_SESSION['ticket'][$page] = $ticket;
+                }
+                $_SESSION['EID'] = $account;
+                $_SESSION['passwd'] = trim($password);
+                $sql = "select belong.EID as EID,
+                    belong.DID as DID, 
+                    employee1.Ename as Ename,
+                    belong.MEID as MEID, 
+                    employee2.Ename as MEname, 
+                    employee1.Eage as Eage,
+                    employee1.Eyear as Eyear, 
+                    employee1.Esex as Esex, 
+                    employee1.Eemail as Eemail,
+                    employee1.Ephone as Ephone,
+                    department.Dname as Dname,
+                    department.Description as Description
+                from belong, employee employee1, employee employee2, 
+                    department
+                where belong.EID = $account
+                    and belong.DID = department.DID 
+                    and belong.EID = employee1.EID 
+                    and belong.MEID = employee2.EID;";
+                $result = $conn->query($sql);
+                if($result->num_rows > 0){
+                    $row = $result->fetch_assoc();
+                    $_SESSION['EID'] = trim($row['EID']);
+                    $_SESSION['DID'] = trim($row['DID']);
+                    $_SESSION['Ename'] = trim($row['Ename']);
+                    $_SESSION['MEID'] = trim($row['MEID']);
+                    $_SESSION['MEname'] = trim($row['MEname']);
+                    $_SESSION['Eage'] = trim($row['Eage']);
+                    $_SESSION['Eyear'] = trim($row['Eyear']);
+                    $_SESSION['Esex'] = trim($row['Esex']);
+                    $_SESSION['Eemail'] = trim($row['Eemail']);
+                    $_SESSION['Ephone'] = trim($row['Ephone']);
+                    $_SESSION['Dname'] = trim($row['Dname']);
+                    $_SESSION['Description'] = trim($row['Description']);
+                }
+                else{
+                    echo "some error happend";
+                }
+                //$info = $_SESSION['info'];
+                return;
+            }
+            echo "<script>";
+            echo "alert(\"密码输入不正确, 请重新尝试！\");"; 
+            echo "</script>";
+        }
+        else{
+            echo "<script>";
+            echo "alert(\"没有查询到此帐号！\");";
+            echo "</script>";
+        }
+    }
+
+    function createSession($page){
+        $EID = $_SESSION['EID'];
+        $DID = $_SESSION['DID'];
+        $Ename = $_SESSION['Ename'];
+        $MEID = $_SESSION['MEID'];
+        $MEname = $_SESSION['MEname'];
+        $Eage = $_SESSION['Eage'];
+        $Eyear = $_SESSION['Eyear'];
+        $Esex = $_SESSION['Esex'];
+        $Eemail = $_SESSION['Eemail'];
+        $Ephone = $_SESSION['Ephone'];
+        $Dname = $_SESSION['Dname'];
+        $Desc = $_SESSION['Description'];
+        $perm = $_SESSION['perm'];
+        $ticket = $_SESSION['ticket'][$page];
+        echo '<script src="./com/vendor/jquery/jquery.min.js"></script>';
+        echo '<script>';
+        echo "$.ajax({
+            type: 'POST',      //data 传送数据类型。post 传递
+            url: 'https://$page/dispatch.php',  // yii 控制器/方法  
+            data: {
+                'command':'createSession',
+                'EID': $EID,
+                'DID': $DID,
+                'Ename': '$Ename',
+                'MEID': $MEID,
+                'MEname': '$MEname',
+                'Eage': $Eage,
+                'Eyear': $Eyear,
+                'Esex': $Esex,
+                'Eemail': '$Eemail',
+                'Ephone': '$Ephone',
+                'Dname': '$Dname',
+                'Desc': \"$Desc\",
+                'ticket': $ticket,
+    
+            },  //传送的数据   
+            xhrFields: {
+                withCredentials: true
+            },
+            success: function (data) {
+                window.location.href = 'https://$page';
+            },
+            error:function(){
+                alert('数据传输错误');
+            }
+        });";
+        echo '</script>';
     }
 
     function createTicket(){
@@ -31,20 +177,13 @@
     echo "<br>";
     if(count($_SESSION['ticket']) > 0){
         if(isset($_SESSION['ticket'][$page])){
-            $ticket = $_SESSION['ticket'][$page];
-            echo "<script>";
-            echo "alert(\"redirect to $page\");";
-            echo "window.location.href = \"https://$page?ticket=$ticket\";";
-            echo "</script>";
+            createSession($page);
             exit;
         }
         else{
             $ticket = createTicket();
             $_SESSION['ticket'][$page] = $ticket;
-            echo "<script>";
-            echo "alert(\"redirect to $page\");";
-            echo "window.location.href = \"https://$page?ticket=$ticket\";";
-            echo "</script>";
+            createSession($page);
             exit;
         }
     }
@@ -74,133 +213,8 @@
             echo "</script>";
         }
         if($accountErr == "" && $passwordErr == ""){
-            $servername = "localhost";
-            $username = "root";
-            $passwd = "root";
-            $dbname = "EMS";
-            $conn = new mysqli($servername, $username, $passwd, $dbname);
-            // 检测连接
-            if ($conn->connect_error) {
-                die("连接失败: " . $conn->connect_error);
-                //exit;
-            }
-            echo "console.log('connect successful')</br>";
-            $sql = "select * from usertable where EID = $account;";
-            echo "sql: $sql"."</br>";
-            $result = $conn->query($sql);
-            if($result->num_rows > 0){
-                $row = $result->fetch_assoc();
-                //TODO
-                //密码输入部分可以加入次数保护。待选。
-                if(!strcmp($row["passwd"], $password)){
-                    echo "$password" . "</br>";
-                    $ticket = createTicket();
-                    echo "ticket = $ticket</br>";
-                    $_SESSION['ticket'][$page] = $ticket;
-                    $_SESSION['EID'] = $account;
-                    $_SESSION['passwd'] = trim($password);
-                    if(!strcmp($page, 'www.personnel.com') || !strcmp($page, 'www.salary.com')){
-                        $sql = "select belong.EID as EID,
-                                    belong.DID as DID, 
-                                    employee1.Ename as Ename,
-                                    belong.MEID as MEID, 
-                                    employee2.Ename as MEname, 
-                                    employee1.Eage as Eage,
-                                    employee1.Eyear as Eyear, 
-                                    employee1.Esex as Esex, 
-                                    employee1.Eemail as Eemail,
-                                    employee1.Ephone as Ephone,
-                                    department.Dname as Dname,
-                                    department.Description as Description,
-                                    pageperm.permtype as perm
-                                from belong, employee employee1, employee employee2, 
-                                    department, pageperm 
-                                where belong.EID = $account
-                                    and pageperm.pagename = '$page'
-                                    and belong.DID = department.DID 
-                                    and belong.EID = employee1.EID 
-                                    and belong.MEID = employee2.EID
-                                    and belong.DID = pageperm.DID;";
-                        $result = $conn->query($sql);
-                        if($result->num_rows > 0){
-                            $row = $result->fetch_assoc();
-                            $_SESSION['EID'] = trim($row['EID']);
-                            $_SESSION['DID'] = trim($row['DID']);
-                            $_SESSION['Ename'] = trim($row['Ename']);
-                            $_SESSION['MEID'] = trim($row['MEID']);
-                            $_SESSION['MEname'] = trim($row['MEname']);
-                            $_SESSION['Eage'] = trim($row['Eage']);
-                            $_SESSION['Eyear'] = trim($row['Eyear']);
-                            $_SESSION['Esex'] = trim($row['Esex']);
-                            $_SESSION['Eemail'] = trim($row['Eemail']);
-                            $_SESSION['Ephone'] = trim($row['Ephone']);
-                            $_SESSION['Dname'] = trim($row['Dname']);
-                            $_SESSION['Description'] = trim($row['Description']);
-                            $_SESSION['perm'] = trim($row['perm']);
-                        }
-                        else{
-                            echo "some error happend";
-                        }
-                    }
-                    else{
-                        $sql = "select belong.EID as EID,
-                            belong.DID as DID, 
-                            employee1.Ename as Ename,
-                            belong.MEID as MEID, 
-                            employee2.Ename as MEname, 
-                            employee1.Eage as Eage,
-                            employee1.Eyear as Eyear, 
-                            employee1.Esex as Esex, 
-                            employee1.Eemail as Eemail,
-                            employee1.Ephone as Ephone,
-                            department.Dname as Dname,
-                            department.Description as Description
-                        from belong, employee employee1, employee employee2, 
-                            department
-                        where belong.EID = $account
-                            and belong.DID = department.DID 
-                            and belong.EID = employee1.EID 
-                            and belong.MEID = employee2.EID;";
-                        $result = $conn->query($sql);
-                        if($result->num_rows > 0){
-                            echo "sql: $sql</br>";
-                            $row = $result->fetch_assoc();
-                            $_SESSION['EID'] = trim($row['EID']);
-                            $_SESSION['DID'] = trim($row['DID']);
-                            $_SESSION['Ename'] = trim($row['Ename']);
-                            $_SESSION['MEID'] = trim($row['MEID']);
-                            $_SESSION['MEname'] = trim($row['MEname']);
-                            $_SESSION['Eage'] = trim($row['Eage']);
-                            $_SESSION['Eyear'] = trim($row['Eyear']);
-                            $_SESSION['Esex'] = trim($row['Esex']);
-                            $_SESSION['Eemail'] = trim($row['Eemail']);
-                            $_SESSION['Ephone'] = trim($row['Ephone']);
-                            $_SESSION['Dname'] = trim($row['Dname']);
-                            $_SESSION['Description'] = trim($row['Description']);
-                            $_SESSION['perm'] = '1';
-                        }
-                        else{
-                            echo "some error happend";
-                        }
-                    }
-                    //$info = $_SESSION['info'];
-                    echo "<script>";
-                    echo "alert(\"redirect to $page\");";
-                    echo "window.location.href = \"https://$page?ticket=$ticket\";";
-                    echo "</script>";
-                    exit;
-                }
-                echo "<script>";
-                echo "alert(\"密码输入不正确, 请重新尝试！\");"; 
-                echo "</script>";
-            }
-            else{
-                echo "<script>";
-                echo "alert(\"没有查询到此帐号！\");";
-                echo "</script>";
-            }
-            
-            
+            getData($page, $account, $password, $conn);
+            createSession($page);
         }
     }
 ?>
