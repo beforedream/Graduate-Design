@@ -324,10 +324,8 @@
                 and 
                     EID = $EID;";
                 $result = $conn->query($sql);
-                $time = array();
-                $amount = array();
                 $belong;
-                $success;
+                $success = 0;
                 $exist;
                 $Dname = '';
                 if($result->num_rows > 0){

@@ -425,7 +425,8 @@
                 xhrFields: {
                     withCredentials: true
                 },
-                success: function (data) {
+                success: function (data) {  
+                    alert(data);
                     if(eval(data)[0] == 1){
                         if(eval(data)[1] == 1){
                             if(eval(data)[2] == 1){
@@ -845,7 +846,7 @@
                                     height: 27px;
                                     width: 75%;
                                 "
-                                onclick = 'departmentSelect();'>部门查询</button>
+                                onclick = 'departmentSalarySelect();'>部门查询</button>
                             </div>
                             <div class="d-flex justify-content-between align-items-center" style="
                                 padding-top: 0.5rem;
@@ -857,7 +858,7 @@
                                     height: 27px;
                                     width: 75%;
                                 "
-                                onclick = 'employeeSelect();'>个人查询</button>
+                                onclick = 'employeeSalarySelect();'>个人查询</button>
                             </div>
                         </div>
                     </div>
